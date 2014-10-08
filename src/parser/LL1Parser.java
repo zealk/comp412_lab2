@@ -211,12 +211,59 @@ public class LL1Parser {
 		s_f = new HashSet<Symbol>();
 		s_f.add(eof);
 		first.put(eof, s_f);
-		//Add terminals
-		for (Symbol terminals : ts) {
+		//Add terminals , initial first is its self
+		for (Symbol t : ts) {
 			s_f = new HashSet<Symbol>();
-			//test git
+			s_f.add(t);
+			first.put(t, s_f);
 		}
-		
+		//Add non-terminals , initial first should be empty
+		for (Symbol nt : nts) {
+			s_f = new HashSet<Symbol>();
+			first.put(nt, s_f);
+		}
+		//printFirst();
+		int last_total;
+		int this_total = countTotal(first);
+		do {
+			//printFirst();
+			last_total = this_total;
+			for (Entry<Symbol,List<List<Symbol>>> p_e :p.entrySet()) { //For each lefthand symbol
+				Symbol lh = p_e.getKey();
+				for (List<Symbol> rh : p_e.getValue()) { //For each production rule
+					int i = 0 , k = rh.size();
+					Set<Symbol> rhs = new HashSet<Symbol>();
+					rhs.addAll(first.get(rh.get(0)));
+					boolean prefixEpsilon = true;
+					for (;i < k-1;i++) {
+						if (!first.get(rh.get(i)).contains(new Symbol("Epsilon"))) {
+							prefixEpsilon = false;
+							break;
+						}
+						rhs.addAll(first.get(rh.get(i+1)));
+					}
+					rhs.remove(new Symbol("Epsilon"));
+					if (prefixEpsilon && first.get(rh.get(k-1)).contains(new Symbol("Epsilon"))) {
+						rhs.add(new Symbol("Epsilon"));
+					}
+					first.get(lh).addAll(rhs);
+				}
+			}
+			this_total = countTotal(first);
+		} while (last_total < this_total);
+	}
+	
+	/**
+	 * Count the total entry number of first, follow or first+.
+	 * Used to determine whether it remains unchanged.
+	 */
+	private int countTotal(Map<Symbol,Set<Symbol>> set) {
+		int total = 0;
+		for (Entry<Symbol,Set<Symbol>> s : set.entrySet()) {
+			Set<Symbol> f_s = s.getValue();
+			total += f_s.size();
+		}
+		return total;
 	}
 
 	private void insertT(Symbol srh) {
@@ -290,6 +337,24 @@ public class LL1Parser {
 			System.out.print(nt + " ");
 		}
 		System.out.println();
+	}
+	
+	/**
+	 * Print first set.
+	 */
+	private void printFirst() {
+		System.out.println("====================First=====================");
+		for (Entry<Symbol,Set<Symbol>> f_e : first.entrySet()) {
+			System.out.print(f_e.getKey() + " : ");
+			Set<Symbol> f_s = f_e.getValue();
+			if (f_s.isEmpty()) {
+				System.out.print("Ø");
+			}
+			for (Symbol s : f_e.getValue()) {
+				System.out.print(s + " ");
+			}
+			System.out.println("");
+		}
 	}
 
 
