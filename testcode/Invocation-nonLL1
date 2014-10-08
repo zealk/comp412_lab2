@@ -1,0 +1,24 @@
+Goal : Reference
+     ;
+
+Reference : Factor Trailer
+	  ;
+
+Trailer : LP RP
+	| epsilon
+	;	  
+
+Factor : name ArgList
+       | number
+       | LP Expr RP
+       ;
+
+ArgList : LP ExprList RP
+	| LB ExprList RB
+	| epsilon
+	;
+
+ExprList : Expr ExprList
+	 | epsilon
+	 ;
+

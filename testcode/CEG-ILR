@@ -1,0 +1,23 @@
+Goal   : Expr
+       ;
+
+Expr   : IExpr Term
+       | Term
+       ;
+
+IExpr  : Expr PLUS
+       | Expr MINUS
+       ;
+
+Term   : ITerm Factor
+       | Factor
+       ;
+
+ITerm  : Term TIMES
+       | Term DIVIDE
+       ;
+
+Factor : LP Expr RP
+       | NUMBER
+       | IDENTIFIER
+       ;

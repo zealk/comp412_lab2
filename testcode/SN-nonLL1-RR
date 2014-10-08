@@ -1,0 +1,6 @@
+Goal : SheepNoise
+     ;
+
+SheepNoise : baa SheepNoise
+	   | baa
+	   ;

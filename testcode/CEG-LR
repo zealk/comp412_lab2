@@ -1,0 +1,17 @@
+Goal   : Expr
+       ;
+
+Expr   : Expr PLUS  Term
+       | Expr MINUS Term
+       | Term
+       ;
+
+Term   : Term TIMES  Factor
+       | Term DIVIDE Factor
+       | Factor
+       ;
+
+Factor : LP Expr RP
+       | NUMBER
+       | IDENTIFIER
+       ;

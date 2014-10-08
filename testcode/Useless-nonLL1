@@ -1,0 +1,9 @@
+EList   :  List
+	;
+
+List    :  NAME COMMA List
+	|  NAME
+	;
+
+Useless :  LParen EList RParen
+	;

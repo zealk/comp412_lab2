@@ -1,0 +1,9 @@
+B      : b ;
+
+C      : S a ;
+
+Start  : S ;
+
+S      : A B ;
+
+A      : C B | b ;

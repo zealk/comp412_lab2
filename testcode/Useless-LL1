@@ -1,0 +1,12 @@
+List    :  NList
+	;
+
+NList   :  NAME EList
+	;
+
+EList   : COMMA NList
+	| epsilon
+	;
+
+Useless :  LParen List RParen
+	;
