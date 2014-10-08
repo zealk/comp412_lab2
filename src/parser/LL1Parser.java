@@ -214,7 +214,7 @@ public class LL1Parser {
 		//Add terminals
 		for (Symbol terminals : ts) {
 			s_f = new HashSet<Symbol>();
-			
+			//test git
 		}
 		
 	}
