@@ -19,7 +19,7 @@ public class Symbol {
 	 * EOF init.
 	 */
 	public Symbol() {
-		lexeme = "EOF";
+		lexeme = "<EOF>";
 		isEpsilon = false;
 		isEOF = true;
 	}
@@ -43,7 +43,7 @@ public class Symbol {
 		if (isEpsilon)
 			return "Epsilon".hashCode();
 		if (isEOF)
-			return "EOF".hashCode();
+			return "<EOF>".hashCode();
 		return lexeme.hashCode();
 	}
 	

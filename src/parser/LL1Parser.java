@@ -32,7 +32,7 @@ public class LL1Parser {
 	
 	Map<Symbol,Set<Symbol>> first;
 	Map<Symbol,Set<Symbol>> follow;
-	Map<Symbol,Set<Symbol>> firstp;
+	Map<Symbol,List<Set<Symbol>>> firstp;
 	
 	private static void help() {
 		System.out.println("Parameters:");
@@ -79,7 +79,9 @@ public class LL1Parser {
 
 	private void print_sets() {
 		// TODO Auto-generated method stub
-		
+		printset(first);
+		printset(follow);
+		printFirstp();
 	}
 
 	private void parse_table() {
@@ -167,7 +169,7 @@ public class LL1Parser {
 		    		}	//End of RightHandSide match
 		    	}	//End of one production match
 		    }	//End of one leftHand match
-		    printAll();
+		    //printAll();
 		    br.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -218,13 +220,70 @@ public class LL1Parser {
 	}
 
 	private void calc_firstplus() {
-		// TODO Auto-generated method stub
-		
+		firstp = new HashMap<Symbol,List<Set<Symbol>>>();
+		for (Symbol nt : nts) {
+			List<Set<Symbol>> s_fp = new ArrayList<Set<Symbol>>();
+			firstp.put(nt, s_fp);
+			
+			List<List<Symbol>> rhs = p.get(nt);
+			for (List<Symbol> rh : rhs) {
+				Set<Symbol> rh_fp = new HashSet<Symbol>();
+				s_fp.add(rh_fp);
+				int i = 0;
+				for (;i < rh.size(); i++) {
+					Symbol tmp = rh.get(i);
+					Set<Symbol> tmp_first = first.get(tmp);
+					rh_fp.addAll(tmp_first);
+					rh_fp.remove(new Symbol("Epsilon"));
+					if (!tmp_first.contains(new Symbol("Epsilon"))) {
+						break;
+					}
+				}
+				if (i == rh.size()) {
+					rh_fp.addAll(follow.get(nt));
+				}
+			}
+		}
 	}
 
 	private void calc_follow() {
 		follow = new HashMap<Symbol,Set<Symbol>>();
-		
+		for (Symbol nt : nts) {
+			Set<Symbol> s_fw = new HashSet<Symbol>();
+			follow.put(nt, s_fw);
+		}
+		follow.get(start).add(new Symbol());	//add EOF to follow set of start symbol
+		int last_total;
+		int this_total = countTotal(follow);
+		Set<Symbol> trailer;
+		do {
+			last_total = this_total;
+			for (Entry<Symbol,List<List<Symbol>>> p_e : p.entrySet()) {	//For every leftHand symbol
+				Symbol lh = p_e.getKey();
+				List<List<Symbol>> rhs = p_e.getValue();
+				for (List<Symbol> rh : rhs) {	//For every production
+					trailer = new HashSet<Symbol>();
+					trailer.addAll(follow.get(lh));	//TRAILER <- FOLLOW(A)
+					for (int i = rh.size()-1 ;i > -1 ;i--) {
+						Symbol bi = rh.get(i);
+						if (nts.contains(bi)) {	//Bi is non-terminal
+							follow.get(bi).addAll(trailer); //add all in TRAILER to FOLLOW(Bi)
+							if (first.get(bi).contains(new Symbol("Epsilon"))) {	//if epsilon in FIRST(bi)
+								trailer.addAll(first.get(bi));
+								trailer.remove(new Symbol("Epsilon"));
+							} else {
+								trailer.clear();
+								trailer.addAll(first.get(bi));
+							}
+						} else {	//Bi is terminal
+							trailer.clear();
+							trailer.add(bi);
+						}
+					}	//end of every i of bi
+				}	//end for every production
+			}	//end of for every leftHand symbol
+			this_total = countTotal(follow);
+		} while (last_total < this_total);
 	}
 
 	private void calc_first() {
@@ -367,11 +426,16 @@ public class LL1Parser {
 	}
 	
 	/**
-	 * Print first set.
+	 * Print first/follow set.
 	 */
-	private void printFirst() {
-		System.out.println("====================First=====================");
-		for (Entry<Symbol,Set<Symbol>> f_e : first.entrySet()) {
+	private void printset(Map<Symbol,Set<Symbol>> set) {
+		if (set == first)
+			System.out.println("====================First=====================");
+		else if (set == follow)
+			System.out.println("====================Follow====================");
+		else
+			return;
+		for (Entry<Symbol,Set<Symbol>> f_e : set.entrySet()) {
 			System.out.print(f_e.getKey() + " : ");
 			Set<Symbol> f_s = f_e.getValue();
 			if (f_s.isEmpty()) {
@@ -381,6 +445,33 @@ public class LL1Parser {
 				System.out.print(s + " ");
 			}
 			System.out.println("");
+		}
+	}
+	
+	private void printFirstp() {
+		System.out.println("====================First+====================");
+		for (Entry<Symbol,List<Set<Symbol>>> f_e : firstp.entrySet()) {
+			Symbol lh = f_e.getKey();
+			List<List<Symbol>> rhs = p.get(lh);
+			List<Set<Symbol>> rhs_f = f_e.getValue();
+			for (int i = 0 ; i < rhs.size() ; i++ ) {
+				System.out.print(lh + " -> ");
+				List<Symbol> rh = rhs.get(i);
+				Set<Symbol> rh_f = rhs_f.get(i);
+				for (Symbol s : rh) {
+					System.out.print(s + " ");
+				}
+				
+				System.out.print(": ");
+				
+				if (rh_f.size() == 0) {
+					System.out.print("Ø");
+				}
+				for (Symbol s : rh_f) {
+					System.out.print(s + " ");
+				}
+				System.out.println();
+			}
 		}
 	}
 
