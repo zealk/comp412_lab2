@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,9 @@ public class LL1Parser {
 	/** Store all the terminal symbols */
 	Set<Symbol> ts;
 	/** Store all the non-terminal symbols*/
-	Set<Symbol> nts;
+	List<Symbol> nts;
+	
+	Symbol start;
 	
 	Map<Symbol,Set<Symbol>> first;
 	Map<Symbol,Set<Symbol>> follow;
@@ -87,8 +90,7 @@ public class LL1Parser {
 	private int init(String[] args) {
 		p = new HashMap<Symbol, List<List<Symbol>>>();
 		ts = new HashSet<Symbol>();
-		nts = new HashSet<Symbol>();
-		
+		nts = new ArrayList<Symbol>();
 		//
 		String InputGrammar = "";
 		int inputCount = 0;
@@ -165,7 +167,7 @@ public class LL1Parser {
 		    		}	//End of RightHandSide match
 		    	}	//End of one production match
 		    }	//End of one leftHand match
-		    //printAll();
+		    printAll();
 		    br.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -175,11 +177,36 @@ public class LL1Parser {
 			return 1;
 		}
 		
+		calc_startSymbol();
+		
 	    calc_sets();
 		
 		return 0;
 	}
 	
+	/**
+	 * Calculate Start Symbol.
+	 * If a non-terminal does not exists in right, its a start symbol.
+	 */
+	private void calc_startSymbol() {
+		Set<Symbol> ss = new HashSet<Symbol>();
+		ss.addAll(nts);
+		for (Entry<Symbol,List<List<Symbol>>> p_e : p.entrySet()) {
+			List<List<Symbol>> rhs = p_e.getValue();
+			for (List<Symbol> rh : rhs) {
+				for (Symbol s : rh) {
+					ss.remove(s);
+				}
+			}
+		}
+		if (ss.size() != 1) {
+			System.err.println("It seems to be more than one start symbol!");
+			return;
+		}
+		start = ss.iterator().next();
+		//System.out.println(start);
+	}
+
 	/**
 	 * Calculate FIRST, FOLLOW, FIRST+ sets.
 	 * Will be called after reading in all things.
@@ -196,7 +223,7 @@ public class LL1Parser {
 	}
 
 	private void calc_follow() {
-		// TODO Auto-generated method stub
+		follow = new HashMap<Symbol,Set<Symbol>>();
 		
 	}
 
@@ -290,13 +317,13 @@ public class LL1Parser {
 	 */
 	public void printAll() {
 		System.out.println("====================Rules====================");
-		for (Entry<Symbol,List<List<Symbol>>> entry:p.entrySet()) {
-			System.out.print(entry.getKey() + " : ");
-			List<List<Symbol>> rhs = entry.getValue();
+		for (Symbol nt : nts) {
+			System.out.print(nt + " : ");
+			List<List<Symbol>> rhs = p.get(nt);
 			for (int i = 0 ; i < rhs.size() ;i++) {
 				List<Symbol> rh = rhs.get(i);
 				if (i > 0) {
-					for (int x = 0 ; x <= entry.getKey().toString().length() ; x++) {
+					for (int x = 0 ; x <= nt.toString().length() ; x++) {
 						System.out.print(" ");
 					}
 					System.out.print("| ");
@@ -308,7 +335,7 @@ public class LL1Parser {
 				System.out.println("");
 
 			}
-			for (int x = 0 ; x <= entry.getKey().toString().length() ; x++) {
+			for (int x = 0 ; x <= nt.toString().length() ; x++) {
 				System.out.print(" ");
 			}
 			System.out.println(";");
