@@ -1,0 +1,27 @@
+terminals: [plus, minus, times, divides, lparen, rparen, name, num]
+non-terminals: [Goal, Expr, ExprPrime, Term, TermPrime, Factor]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: Goal
+
+productions:
+  0: {Goal: [Expr]}
+  1: {Expr: [Term, ExprPrime]}
+  2: {ExprPrime: [plus, Term, ExprPrime]}
+  3: {ExprPrime: [minus, Term, ExprPrime]}
+  4: {ExprPrime: []}
+  5: {Term: [Factor, TermPrime]}
+  6: {TermPrime: [times, Factor, TermPrime]}
+  7: {TermPrime: [divides, Factor, TermPrime]}
+  8: {TermPrime: []}
+  9: {Factor: [lparen, Expr, rparen]}
+  10: {Factor: [num]}
+  11: {Factor: [name]}
+    
+table:
+  Goal: {plus: --, minus: --, times: --, divides: --, lparen: 0, rparen: --, name: 0, num: 0, <EOF>: -- }
+  Expr: {plus: --, minus: --, times: --, divides: --, lparen: 1, rparen: --, name: 1, num: 1, <EOF>: -- }
+  ExprPrime: {plus: 2, minus: 3, times: --, divides: --, lparen: --, rparen: 4, name: --, num: --, <EOF>: 4 }
+  Term: {plus: --, minus: --, times: --, divides: --, lparen: 5, rparen: --, name: 5, num: 5, <EOF>: -- }
+  TermPrime: {plus: 8, minus: 8, times: 6, divides: 7, lparen: --, rparen: 8, name: --, num: --, <EOF>: 8 }
+  Factor: {plus: --, minus: --, times: --, divides: --, lparen: 9, rparen: --, name: 11, num: 10, <EOF>: -- }

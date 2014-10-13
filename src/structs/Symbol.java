@@ -49,6 +49,8 @@ public class Symbol {
 	
 	@Override
 	public String toString() {
+		if (isEpsilon)
+			return "ε";
 		return lexeme;
 	}
 	

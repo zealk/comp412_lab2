@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -78,15 +77,109 @@ public class LL1Parser {
 	}
 
 	private void print_sets() {
-		// TODO Auto-generated method stub
 		printset(first);
 		printset(follow);
 		printFirstp();
 	}
 
 	private void parse_table() {
-		// TODO Auto-generated method stub
+		YAML_sets();
+		YAML_productions();
+		YAML_table();
+	}
+
+	private void YAML_table() {
+		//calculate table
+		Map<Symbol,Integer[]> t = new HashMap<Symbol,Integer[]>(); 
+		List<Symbol> t_l = new ArrayList<Symbol>();
+		t_l.addAll(ts);	//add all terminals
+		t_l.add(new Symbol());	//add eof
+		for (Symbol lh : nts) {
+			Integer[] lh_t = new Integer[t_l.size()];
+			t.put(lh, lh_t);
+		}
+		boolean err = false;	// is there any LL(1) collision?
+		Symbol err_t = null;
+		Symbol err_nt = null;
 		
+		int p_idx = -1;
+		for (Symbol lh : nts) { //for every lefthand symbol
+			Integer[] t_row = t.get(lh);
+			List<Set<Symbol>> fp = firstp.get(lh);
+			for (Set<Symbol> p_fp : fp) {	//for every production
+				p_idx++;
+				for (Symbol s : p_fp) {		//for every symbol in first p
+					int s_idx = t_l.indexOf(s);
+					if (t_row[s_idx] != null) {
+						err = true;
+						err_nt = lh;
+						err_t = s;
+					} else {
+						t_row[s_idx] = new Integer(p_idx);
+					}
+				}
+			}
+		}
+		
+		//print table
+		if (err) {
+			System.err.println("Cannot generate LL(1) table : collision detected on: NT: "+ err_nt +" T: "+ err_t );
+			return;
+		}
+		System.out.println("table:");
+		for (Symbol lh : nts) {		
+			System.out.print("  ");	//indent
+			System.out.print(lh + ": ");
+			System.out.print("{");
+			Integer[] t_row = t.get(lh);
+			for (int i = 0 ; i < t_l.size() ;i++) {
+				System.out.print(t_l.get(i));
+				System.out.print(": ");
+				if (t_row[i]==null) {
+					System.out.print("--");
+				} else {
+					System.out.print(t_row[i]);
+				}
+				if (i < t_l.size() - 1) { 
+					System.out.print(", ");
+				}
+			}
+			System.out.println(" }");
+		}
+	}
+
+	private void YAML_productions() {
+		System.out.println("productions:");
+		int p_i = -1;
+		for (Symbol lh : nts) {	//for every lefthand
+			List<List<Symbol>> rhs = p.get(lh);
+			for (List<Symbol> rh : rhs)	{//for every production
+				p_i ++;
+				System.out.print("  " + p_i + ": {" + lh + ": ");
+				if (rh.get(0).isEpsilon)
+					System.out.print("[]");
+				else
+					System.out.print(rh.toString());
+				System.out.println("}");
+			}
+		}
+		System.out.println();
+	}
+
+	private void YAML_sets() {
+		System.out.print("terminals: ");
+		System.out.println(ts.toString());
+		
+		System.out.print("non-terminals: ");
+		System.out.println(nts.toString());
+		
+		System.out.println("eof-marker: " + new Symbol().toString());
+		
+		System.out.println("error-marker: --");
+		
+		System.out.print("start-symbol: ");
+		System.out.println(start);
+		System.out.println();
 	}
 
 	private int init(String[] args) {
@@ -450,10 +543,9 @@ public class LL1Parser {
 	
 	private void printFirstp() {
 		System.out.println("====================First+====================");
-		for (Entry<Symbol,List<Set<Symbol>>> f_e : firstp.entrySet()) {
-			Symbol lh = f_e.getKey();
+		for (Symbol lh : nts) {
 			List<List<Symbol>> rhs = p.get(lh);
-			List<Set<Symbol>> rhs_f = f_e.getValue();
+			List<Set<Symbol>> rhs_f = firstp.get(lh);
 			for (int i = 0 ; i < rhs.size() ; i++ ) {
 				System.out.print(lh + " -> ");
 				List<Symbol> rh = rhs.get(i);
