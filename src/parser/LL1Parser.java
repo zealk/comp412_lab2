@@ -54,40 +54,48 @@ public class LL1Parser {
 				return;
 			}
 		}
-		LL1Parser llp = new LL1Parser();
 		
-		for (String arg:args) {
-			if (arg.equals("-r")) {
-				llp.remove_leftrecursive();
+		int para_count = 0;
+		String para = "";
+		for (String arg : args) {
+			if (arg.equals("-r") || arg.equals("-t") || arg.equals("-s")) {
+				para_count ++;
+				para = arg;
 			}
 		}
 		
+		if (para_count != 1 || args.length != 2) {
+			System.err.println("Invalid parameter number. The usage:");
+			help();
+			return;
+		}
+
+		LL1Parser llp = new LL1Parser();
 		if (llp.init(args) > 0) {
 			return;
 		}
 		
-		for (String arg:args) {
-			if (arg.equals("-t")) {
-				//if also has -s
-				for (String arg2:args) {
-					if (arg2.equals("-s")) {
-						System.err.println("Parameter cannot contain both -t and -s.");
-						help();
-						return;
-					}
-				}
-				llp.parse_table();
-				return;
-			}
+		if (para.equals("-r")) {
+			llp.do_removeLR();
+			llp.YAML_productions();
+			/*
+			llp.calc_sets();
+			llp.print_sets();
+			llp.parse_table();
+			*/
+			return;
 		}
-		for (String arg:args) {
-			if (arg.equals("-s")) {
-				llp.print_sets();
-			}
+		if (para.equals("-t")) {
+			llp.calc_sets();
+			llp.parse_table();
+			return;
 		}
-		System.err.println("Parameter should contain -t or -s.");
-		help();
-		return;
+		if (para.equals("-s")) {
+			llp.calc_sets();
+			llp.print_sets();
+			return;
+		}
+		
 	}
 
 	private void print_sets() {
@@ -137,7 +145,7 @@ public class LL1Parser {
 		
 		//print table
 		if (err) {
-			System.err.println("Cannot generate LL(1) table : collision detected on: NT: "+ err_nt +" T: "+ err_t );
+			System.err.println("Cannot generate LL(1) table : conflict detected on: NT: "+ err_nt +" T: "+ err_t );
 			return;
 		}
 		System.out.println("table:");
@@ -288,10 +296,10 @@ public class LL1Parser {
 		
 		calc_startSymbol();
 		
-		if (removeLR)
-			do_removeLR();
+		//if (removeLR)
+		//	do_removeLR();
 		
-	    calc_sets();
+	    //calc_sets();
 		
 		return 0;
 	}
