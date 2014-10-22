@@ -1,0 +1,5 @@
+S : B
+	 ;
+B : a B b
+	 | Epsilon
+	 ;

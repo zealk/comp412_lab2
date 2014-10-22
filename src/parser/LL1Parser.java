@@ -33,6 +33,8 @@ public class LL1Parser {
 	Map<Symbol,Set<Symbol>> follow;
 	Map<Symbol,List<Set<Symbol>>> firstp;
 	
+	boolean removeLR = false;
+	
 	private static void help() {
 		System.out.println("Parameters:");
 		System.out.println("-h : help");
@@ -53,17 +55,27 @@ public class LL1Parser {
 			}
 		}
 		LL1Parser llp = new LL1Parser();
-		if (llp.init(args) > 0) {
-			return;
-		}
 		
 		for (String arg:args) {
 			if (arg.equals("-r")) {
 				llp.remove_leftrecursive();
 			}
 		}
+		
+		if (llp.init(args) > 0) {
+			return;
+		}
+		
 		for (String arg:args) {
 			if (arg.equals("-t")) {
+				//if also has -s
+				for (String arg2:args) {
+					if (arg2.equals("-s")) {
+						System.err.println("Parameter cannot contain both -t and -s.");
+						help();
+						return;
+					}
+				}
 				llp.parse_table();
 				return;
 			}
@@ -73,6 +85,8 @@ public class LL1Parser {
 				llp.print_sets();
 			}
 		}
+		System.err.println("Parameter should contain -t or -s.");
+		help();
 		return;
 	}
 
@@ -274,11 +288,144 @@ public class LL1Parser {
 		
 		calc_startSymbol();
 		
+		if (removeLR)
+			do_removeLR();
+		
 	    calc_sets();
 		
 		return 0;
 	}
 	
+	/**
+	 * Remove direct left recursive.
+	 * @param lh : left hand symbol
+	 */
+	private void do_removeDirectLR(Symbol lh) {
+		//lh should exists in nts
+		List<List<Symbol>> pds = p.get(lh);
+		if (pds == null)
+			return;
+		
+		//Divide all productions by whether it is DIRECT left recursive.
+		//A->Aa1 | Aa2 .. 
+		List<List<Symbol>> lrpd = new ArrayList<List<Symbol>>();
+		//A->b1 | b2 | ... | epsilon
+		List<List<Symbol>> nlrpd = new ArrayList<List<Symbol>>();
+		
+		for (List<Symbol> pd : pds) {
+			if (pd.get(0).equals(lh)) {
+				lrpd.add(pd);
+			} else {
+				nlrpd.add(pd);
+			}
+		}
+		if (lrpd.size() == 0)
+			return;
+			
+		//Try to name the new symbol
+		int suffix = 0;
+		Symbol newSymbol = new Symbol(lh.lexeme + suffix);
+		while (ts.contains(newSymbol) || nts.contains(newSymbol)) {
+			suffix ++;
+			newSymbol = new Symbol(lh.lexeme + suffix);
+		}
+		
+		List<List<Symbol>> newpd = new ArrayList<List<Symbol>>();
+		List<List<Symbol>> newnpd = new ArrayList<List<Symbol>>();
+		
+		for (List<Symbol> nlrp : nlrpd) {	//for A -> b1 | b2 |...
+			if (nlrp.get(0).isEpsilon) {
+				newpd.add(nlrp);
+			} else {
+				nlrp.add(newSymbol);	// b1 change to b1 A'
+				newpd.add(nlrp);		// A -> b1 A'
+			}
+		}
+		
+		for (List<Symbol> lrp : lrpd) {		//for A -> A a1 | A a2 | ...
+			lrp.remove(0);
+			lrp.add(newSymbol);			// A -> A a1 change to A' -> a1 A' | epsilon
+			newnpd.add(lrp);
+		}
+		List<Symbol> lrp = new ArrayList<Symbol>();
+		lrp.add(new Symbol("Epsilon"));
+		newnpd.add(lrp);
+		
+		p.remove(lh);
+		p.put(lh, newpd);
+		p.put(newSymbol, newnpd);
+		nts.add(newSymbol);
+	}
+	
+	private void do_removeLR() {
+		
+		for (int i = 0 ; i < nts.size() ;i++) {
+			Symbol lh = nts.get(i);
+			for (int j = 0 ; j < i ; j ++) {
+				Symbol rhf = nts.get(j);
+				List<List<Symbol>> pds = p.get(lh);
+				List<List<Symbol>> toAdd = new ArrayList<List<Symbol>>();
+				for (int p_idx = 0 ; p_idx < pds.size() ; p_idx++) {
+					if (pds.get(p_idx).get(0).equals(rhf)) {	// Ai -> Aj a
+						pds.get(p_idx).remove(0);
+						List<List<Symbol>> rhf_ps = p.get(rhf);
+						for (List<Symbol> rhf_p : rhf_ps) {		//for each Aj ->
+							List<Symbol> toAddp = new ArrayList<Symbol>();
+							toAddp.addAll(rhf_p);
+							toAddp.addAll(pds.get(p_idx));
+							toAdd.add(toAddp);
+						}
+						pds.remove(p_idx);
+						p_idx--;
+					}	//end if Ai -> Aj a
+				}	//end for every production of lh(Ai)
+				pds.addAll(toAdd);
+				
+			} //end for every j
+			do_removeDirectLR(lh);
+		}	// end for every i
+		
+		remove_unreachable();
+		
+	}
+
+	/**
+	 * There may be some unreachable non-terminal symbol when after
+	 * eliminating left recursive. Remove them.
+	 */
+	private void remove_unreachable() {
+		Set<Symbol> r = new HashSet<Symbol>();
+		r.add(start);
+		int lastcount;
+		int nowcount = 1;
+		do {
+			lastcount = nowcount;
+			Set<Symbol> toAdd = new HashSet<Symbol>();
+			for (Symbol s : r) {	//for every symbol is reachable
+				List<List<Symbol>> pds = p.get(s);
+				for (List<Symbol> pd : pds) {
+					for (Symbol rhs : pd) {
+						if (nts.contains(rhs)) {
+							toAdd.add(rhs);
+						}
+					}
+				}
+			}
+			r.addAll(toAdd);
+			nowcount = r.size();
+		} while (nowcount > lastcount);
+		
+		for (int i = 0 ; i < nts.size() ; i++) {
+			Symbol s = nts.get(i);
+			if (!r.contains(s)) {
+				nts.remove(i);
+				i --;
+				p.remove(s);
+			}
+		}
+		
+	}
+
 	/**
 	 * Calculate Start Symbol.
 	 * If a non-terminal does not exists in right, its a start symbol.
@@ -459,8 +606,7 @@ public class LL1Parser {
 	}
 
 	private void remove_leftrecursive() {
-		// TODO Auto-generated method stub
-		
+		removeLR = true;
 	}
 
 	//Below is for test.

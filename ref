@@ -1,0 +1,2 @@
+ruby skeletonParser.rb -d ../myoutput/CEG-RR-Simple/CEG-RR-Simple.yaml ../myoutput/CEG-RR-Simple/test.expr
+

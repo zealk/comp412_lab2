@@ -1,0 +1,3 @@
+all : 
+	echo '#!/bin/bash \njava -jar LL1Parser.jar $$@\n' > llgen
+	chmod a+x llgen

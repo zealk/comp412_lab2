@@ -1,0 +1,7 @@
+Goal : List 
+	 ;
+List : Pair List
+	 | Epsilon
+	 ;
+Pair : LP List RP
+	 ;

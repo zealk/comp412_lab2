@@ -1,0 +1,5 @@
+Start : S ;
+R : S a | a ;
+Q : R b | b ;
+S : Q c | c ;
+

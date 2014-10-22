@@ -1,0 +1,10 @@
+terminals: [a, b]
+non-terminals: [B]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: B
+productions:
+ 0: {B: [a, B, b]}
+ 1: {B: []}
+table:
+ B: {b: 1, a: 0, <EOF>: 1}
