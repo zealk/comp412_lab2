@@ -24,8 +24,7 @@ mkdir :
 	mkdir -p bin
 
 LL1Parser : 
-	echo '#!/bin/bash \njava -jar LL1Parser.jar $$@\n' > llgen
-	chmod a+x llgen
+	cp src/llgen llgen
 
 build : $(SOURCE_FILES:.java=.class)
 
