@@ -116,20 +116,26 @@ public class LL1Parser {
 		}
 		boolean err = false;	// is there any LL(1) collision?
 		Symbol err_t = null;
+		List<Symbol> err_l = new ArrayList<Symbol>();		//the production causes non-LL(1)
+		Symbol err_nt = null;
 		int err_idx = -1;
 		
 		int p_idx = -1;
 		for (Symbol lh : nts) { //for every lefthand symbol
 			Integer[] t_row = t.get(lh);
 			List<Set<Symbol>> fp = firstp.get(lh);
+			int nt_idx = -1;
 			for (Set<Symbol> p_fp : fp) {	//for every production
 				p_idx++;
+				nt_idx++;
 				for (Symbol s : p_fp) {		//for every symbol in first p
 					int s_idx = t_l.indexOf(s);
 					if (t_row[s_idx] != null) {
 						err = true;
 						err_t = s;
 						err_idx = p_idx;
+						err_nt = lh;
+						err_l = p.get(lh).get(nt_idx);
 					} else {
 						t_row[s_idx] = new Integer(p_idx);
 					}
@@ -140,7 +146,12 @@ public class LL1Parser {
 		//print table
 		if (err) {
 			System.err.println("Cannot generate LL(1) table!");
-			System.err.println("Conflict detected on: Production: " + err_idx);
+			System.err.print("Conflict detected on: Production: " + err_idx + " : ");
+			System.err.print(err_nt + " -> ");
+			for (Symbol s : err_l) {
+				System.err.print(s + " ");
+			}
+			System.err.println();
 			System.err.println("Terminal: "+ err_t);
 			return err;
 		}

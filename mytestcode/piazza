@@ -1,0 +1,5 @@
+BParens : List
+;
+List : Pair List | EPSILON ;
+Pair : LP Trailer ;
+Trailer : RP | LP Trailer Trailer ;
