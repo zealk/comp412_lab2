@@ -1,0 +1,16 @@
+terminals: [RParen, LParen]
+non-terminals: [BParens, List, Pair]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: BParens
+
+productions:
+  0: {BParens: [List]}
+  1: {List: [Pair, List]}
+  2: {List: []}
+  3: {Pair: [LParen, List, RParen]}
+
+table:
+  BParens: {RParen: --, LParen: 0, <EOF>: 0 }
+  List: {RParen: 2, LParen: 1, <EOF>: 2 }
+  Pair: {RParen: --, LParen: 3, <EOF>: -- }

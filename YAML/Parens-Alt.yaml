@@ -1,0 +1,19 @@
+terminals: [RP, LP]
+non-terminals: [BParens, List, Pair, Trailer]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: BParens
+
+productions:
+  0: {BParens: [List]}
+  1: {List: [Pair, List]}
+  2: {List: []}
+  3: {Pair: [LP, Trailer]}
+  4: {Trailer: [RP]}
+  5: {Trailer: [LP, Trailer, Trailer]}
+
+table:
+  BParens: {RP: --, LP: 0, <EOF>: 0 }
+  List: {RP: --, LP: 1, <EOF>: 2 }
+  Pair: {RP: --, LP: 3, <EOF>: -- }
+  Trailer: {RP: 4, LP: 5, <EOF>: -- }

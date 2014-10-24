@@ -1,0 +1,18 @@
+terminals: [RParen, NAME, LParen, COMMA]
+non-terminals: [List, NList, EList, Useless]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: Useless
+
+productions:
+  0: {List: [NList]}
+  1: {NList: [NAME, EList]}
+  2: {EList: [COMMA, NList]}
+  3: {EList: []}
+  4: {Useless: [LParen, List, RParen]}
+
+table:
+  List: {RParen: --, NAME: 0, LParen: --, COMMA: --, <EOF>: -- }
+  NList: {RParen: --, NAME: 1, LParen: --, COMMA: --, <EOF>: -- }
+  EList: {RParen: 3, NAME: --, LParen: --, COMMA: 2, <EOF>: -- }
+  Useless: {RParen: --, NAME: --, LParen: 4, COMMA: --, <EOF>: -- }

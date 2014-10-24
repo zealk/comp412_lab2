@@ -1,0 +1,25 @@
+terminals: [TEN, NINE, SEVEN, ONE, TWO, THREE, FOUR, SIX, FIVE, EIGHT]
+non-terminals: [Goal, StList, Stmt]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: Goal
+
+productions:
+  0: {Goal: [StList]}
+  1: {StList: [Stmt, StList]}
+  2: {StList: []}
+  3: {Stmt: [ONE]}
+  4: {Stmt: [TWO]}
+  5: {Stmt: [THREE]}
+  6: {Stmt: [FOUR]}
+  7: {Stmt: [FIVE]}
+  8: {Stmt: [SIX]}
+  9: {Stmt: [SEVEN]}
+  10: {Stmt: [EIGHT]}
+  11: {Stmt: [NINE]}
+  12: {Stmt: [TEN]}
+
+table:
+  Goal: {TEN: 0, NINE: 0, SEVEN: 0, ONE: 0, TWO: 0, THREE: 0, FOUR: 0, SIX: 0, FIVE: 0, EIGHT: 0, <EOF>: 0 }
+  StList: {TEN: 1, NINE: 1, SEVEN: 1, ONE: 1, TWO: 1, THREE: 1, FOUR: 1, SIX: 1, FIVE: 1, EIGHT: 1, <EOF>: 2 }
+  Stmt: {TEN: 12, NINE: 11, SEVEN: 9, ONE: 3, TWO: 4, THREE: 5, FOUR: 6, SIX: 8, FIVE: 7, EIGHT: 10, <EOF>: -- }

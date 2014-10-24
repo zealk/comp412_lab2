@@ -1,0 +1,14 @@
+terminals: [baa]
+non-terminals: [Goal, SheepNoise]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: Goal
+
+productions:
+  0: {Goal: [SheepNoise]}
+  1: {SheepNoise: [baa, SheepNoise]}
+  2: {SheepNoise: []}
+
+table:
+  Goal: {baa: 0, <EOF>: 0 }
+  SheepNoise: {baa: 1, <EOF>: 2 }
