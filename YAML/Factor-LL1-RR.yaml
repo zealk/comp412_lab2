@@ -1,0 +1,22 @@
+terminals: [LB, RB, name, RP, number, Expr, LP]
+non-terminals: [Goal, Factor, ArgList, ExprList]
+eof-marker: <EOF>
+error-marker: --
+start-symbol: Goal
+
+productions:
+  0: {Goal: [Factor]}
+  1: {Factor: [name, ArgList]}
+  2: {Factor: [number]}
+  3: {Factor: [LP, Expr, RP]}
+  4: {ArgList: [LP, ExprList, RP]}
+  5: {ArgList: [LB, ExprList, RB]}
+  6: {ArgList: []}
+  7: {ExprList: [Expr, ExprList]}
+  8: {ExprList: []}
+
+table:
+  Goal: {LB: --, RB: --, name: 0, RP: --, number: 0, Expr: --, LP: 0, <EOF>: -- }
+  Factor: {LB: --, RB: --, name: 1, RP: --, number: 2, Expr: --, LP: 3, <EOF>: -- }
+  ArgList: {LB: 5, RB: --, name: --, RP: --, number: --, Expr: --, LP: 4, <EOF>: 6 }
+  ExprList: {LB: --, RB: 8, name: --, RP: 8, number: --, Expr: 7, LP: --, <EOF>: -- }

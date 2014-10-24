@@ -33,8 +33,6 @@ public class LL1Parser {
 	Map<Symbol,Set<Symbol>> follow;
 	Map<Symbol,List<Set<Symbol>>> firstp;
 	
-	boolean removeLR = false;
-	
 	private static void help() {
 		System.out.println("Parameters:");
 		System.out.println("-h : help");
@@ -77,12 +75,7 @@ public class LL1Parser {
 		
 		if (para.equals("-r")) {
 			llp.do_removeLR();
-			llp.YAML_productions();
-			/*
-			llp.calc_sets();
-			llp.print_sets();
-			llp.parse_table();
-			*/
+			llp.printProductions();
 			return;
 		}
 		if (para.equals("-t")) {
@@ -92,6 +85,7 @@ public class LL1Parser {
 		}
 		if (para.equals("-s")) {
 			llp.calc_sets();
+			llp.printProductions();
 			llp.print_sets();
 			return;
 		}
@@ -105,12 +99,12 @@ public class LL1Parser {
 	}
 
 	private void parse_table() {
-		YAML_sets();
-		YAML_productions();
-		YAML_table();
+		String ret = YAML_sets();
+		ret += YAML_productions();
+		YAML_table(ret);
 	}
 
-	private void YAML_table() {
+	private boolean YAML_table(String ret) {
 		//calculate table
 		Map<Symbol,Integer[]> t = new HashMap<Symbol,Integer[]>(); 
 		List<Symbol> t_l = new ArrayList<Symbol>();
@@ -122,7 +116,7 @@ public class LL1Parser {
 		}
 		boolean err = false;	// is there any LL(1) collision?
 		Symbol err_t = null;
-		Symbol err_nt = null;
+		int err_idx = -1;
 		
 		int p_idx = -1;
 		for (Symbol lh : nts) { //for every lefthand symbol
@@ -134,8 +128,8 @@ public class LL1Parser {
 					int s_idx = t_l.indexOf(s);
 					if (t_row[s_idx] != null) {
 						err = true;
-						err_nt = lh;
 						err_t = s;
+						err_idx = p_idx;
 					} else {
 						t_row[s_idx] = new Integer(p_idx);
 					}
@@ -145,63 +139,77 @@ public class LL1Parser {
 		
 		//print table
 		if (err) {
-			System.err.println("Cannot generate LL(1) table : conflict detected on: NT: "+ err_nt +" T: "+ err_t );
-			return;
+			System.err.println("Cannot generate LL(1) table!");
+			System.err.println("Conflict detected on: Production: " + err_idx);
+			System.err.println("Terminal: "+ err_t);
+			return err;
 		}
-		System.out.println("table:");
+		
+		ret += "table:\n";
 		for (Symbol lh : nts) {		
-			System.out.print("  ");	//indent
-			System.out.print(lh + ": ");
-			System.out.print("{");
+			ret += "  "; //indent
+			ret += lh + ": ";
+			ret += "{";
 			Integer[] t_row = t.get(lh);
 			for (int i = 0 ; i < t_l.size() ;i++) {
-				System.out.print(t_l.get(i));
-				System.out.print(": ");
+				ret += t_l.get(i);
+				ret += ": ";
 				if (t_row[i]==null) {
-					System.out.print("--");
+					ret += "--";
 				} else {
-					System.out.print(t_row[i]);
+					ret += t_row[i];
 				}
 				if (i < t_l.size() - 1) { 
-					System.out.print(", ");
+					ret += ", ";
 				}
 			}
-			System.out.println(" }");
+			ret += " }\n";
 		}
+		System.out.print(ret);
+		return err;
 	}
 
-	private void YAML_productions() {
-		System.out.println("productions:");
+	private String YAML_productions() {
+		String ret = "productions:\n";
+		
 		int p_i = -1;
 		for (Symbol lh : nts) {	//for every lefthand
 			List<List<Symbol>> rhs = p.get(lh);
 			for (List<Symbol> rh : rhs)	{//for every production
 				p_i ++;
-				System.out.print("  " + p_i + ": {" + lh + ": ");
+				ret += "  " + p_i + ": {" + lh + ": ";
 				if (rh.get(0).isEpsilon)
-					System.out.print("[]");
+					ret += "[]";
 				else
-					System.out.print(rh.toString());
-				System.out.println("}");
+					ret += rh.toString();
+				ret += "}\n";
 			}
 		}
-		System.out.println();
+		ret += "\n";
+
+		return ret;
 	}
 
-	private void YAML_sets() {
-		System.out.print("terminals: ");
-		System.out.println(ts.toString());
+	private String YAML_sets() {
+
+		String ret = "terminals: ";
+		ret += ts.toString();
+		ret += "\n";
 		
-		System.out.print("non-terminals: ");
-		System.out.println(nts.toString());
+		ret += "non-terminals: ";
+		ret += nts.toString();
+		ret += "\n";
 		
-		System.out.println("eof-marker: " + new Symbol().toString());
+		ret += "eof-marker: " + new Symbol().toString() + "\n";
 		
-		System.out.println("error-marker: --");
+		ret += "error-marker: --\n";
 		
-		System.out.print("start-symbol: ");
-		System.out.println(start);
-		System.out.println();
+		ret += "start-symbol: " + start + "\n";
+		ret += "\n";
+		
+		return ret;
+		
+		
 	}
 
 	private int init(String[] args) {
@@ -613,10 +621,6 @@ public class LL1Parser {
 		nts.add(slh);
 	}
 
-	private void remove_leftrecursive() {
-		removeLR = true;
-	}
-
 	//Below is for test.
 	/**
 	 * Print derive rules, terminal set, non-termial set.
@@ -721,5 +725,29 @@ public class LL1Parser {
 		}
 	}
 
+	private void printProductions() {
+		for (Symbol nt : nts) {	//for each non-terminal
+			List<List<Symbol>> pds = p.get(nt);
+			System.out.print(nt + " : ");
+			int i = 0;
+			for (List<Symbol> pd : pds) { //for each production
+				if (i > 0) {	//not the first, print spaces for alignment
+					for (int j = 0 ; j < nt.lexeme.length() ; j ++) {
+						System.out.print(" ");	
+					}
+					System.out.print(" | ");
+				}
+				for (Symbol s : pd) {	//for each symbol in production
+					System.out.print(s + " ");
+				}
+				System.out.println("");
+				i++;
+			}
+			for (int j = 0 ; j < nt.lexeme.length() ; j ++) {
+				System.out.print(" ");	
+			}
+			System.out.println(" ;");
+		}
+	}
 
 }
